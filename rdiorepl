@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+# -*- ruby -*-
+#
+# Repl for exploring rdio.
+#
+
+require 'rubygems'
+require 'rdio'
+require 'lib/treerepl'
+include Rdio
+include TreeRepl
+
+class SimpleNamedNode < NamedNode
+  def initialize(o)
+    super(o,o.name)
+  end
+end
+
+# ----------------------------------------------------------------------
+# Adapter classes
+# ----------------------------------------------------------------------
+
+class UserNode < NamedNode
+  def initialize(o)
+    super(o,"#{o.first_name} #{o.last_name}")
+  end
+  def symbols
+    {'artists' => :artists_in_collection,
+      'tracks' => :tracks_in_collection,
+      'albums' => :albums_in_collection}
+  end
+end
+
+class ArtistNode < SimpleNamedNode
+  def initialize(o)
+    super(o)
+  end
+  def symbols
+    {'tracks' => :tracks,
+      'albums' => :albums}
+  end
+end
+
+class AlbumNode < SimpleNamedNode
+  def initialize(o)
+    super(o)
+  end
+  def symbols
+    {'tracks' => :tracks_in_collection}
+  end
+end
+
+class TrackNode < SimpleNamedNode
+  def initialize(o)
+    super(o)
+  end
+  def symbols
+    {}
+  end
+end
+
+CmdNode.classes2tree_nodes = {
+  User => UserNode,
+  Artist => ArtistNode,
+  Album => AlbumNode,
+  Track => TrackNode,
+}
+
+# ----------------------------------------------------------------------
+# Commands
+# ----------------------------------------------------------------------
+
+
+
+# ----------------------------------------------------------------------
+# Main entry
+# ----------------------------------------------------------------------
+
+def main(argv)
+  user = argv.empty? ? User.current : User.find(argv[0])
+  repl = Repl.new UserNode
+  repl.finder = lambda {|name| User.find name}
+  node = UserNode.new user
+  repl.main node
+end
+
+main ARGV

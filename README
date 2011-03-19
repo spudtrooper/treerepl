@@ -1,0 +1,11 @@
+Provides a way to create command line itnerfaces for web services with
+inherent tree-like structure.  There are two examples:
+
+ - githubrepl
+ - rdiorepl
+
+They both require some other libraries.  The basic idea is this:
+ 
+ 1. Define the tree model for your service
+ 2. Define the mapping from tree to service
+ 3. See the example and go from there

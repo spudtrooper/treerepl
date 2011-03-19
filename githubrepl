@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+# -*- ruby -*-
+#
+# Repl for exploring git.  More here:
+#
+#  http://www.jeffpalm.com/blog/archives/002194.html
+#
+
+require 'rubygems'
+require 'hubruby'
+require 'lib/treerepl'
+include TreeRepl
+
+# ----------------------------------------------------------------------
+# Commands
+#-----------------------------------------------------------------------
+
+class Clone < Cmd
+  def initialize(repl)
+    super(repl,'clone')
+  end
+  def help
+    'Clone the current repository'
+  end
+  def exec(args)
+    args = ['.'] if args.empty?
+    args.each do |arg|
+      rel = repl.eval_path repl.cur,arg
+      if rel.kind_of? RepositoryNode
+        rep = rel.obj
+        url = "https://github.com/#{rep.owner}/#{rep.name}"
+        system 'git','clone',url
+      else
+        STDERR.puts 'Invalid repository: ' + arg
+      end
+    end
+  end
+end
+
+# ----------------------------------------------------------------------
+# Adapter classes
+# ----------------------------------------------------------------------
+
+class UserNode < NamedNode
+  def initialize(o)
+    super(o,o.login)
+  end
+  def symbols
+    [:followers,
+     :following,
+     :repositories,
+     :watched]
+  end
+end
+
+class RepositoryNode < NamedNode
+  def initialize(o)
+    super(o,o.name)
+  end
+  def symbols
+    [:watchers,
+     :branches]
+  end
+end
+
+CmdNode.classes2tree_nodes = {
+  GitHub::User => UserNode,
+  GitHub::Repository => RepositoryNode,
+}
+
+
+# ----------------------------------------------------------------------
+# Main entry
+# ----------------------------------------------------------------------
+
+def main(argv)
+  node = argv.empty? ? nil : UserNode.new(GitHub.user(argv[0]))
+  repl = Repl.new UserNode
+  repl.finder = lambda {|name| GitHub.user name}
+  repl.add_command Clone
+  repl.main node
+end
+
+main ARGV
